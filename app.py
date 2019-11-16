@@ -42,30 +42,32 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
         # Non-None enables compression with default options.
         return {}
 
-    def open(self):
+    async def open(self):
         ChatSocketHandler.waiters.add(self)
-        self.send_updates({'type': 'count', 'usercount': len(self.waiters)})
+        await self.send_updates({'type': 'count', 'usercount': len(self.waiters)})
+        await self.write_message({'type': 'cached', 'cache': self.cache})
 
-    def on_close(self):
+    async def on_close(self):
         ChatSocketHandler.waiters.remove(self)
-        self.send_updates({'type': 'count', 'usercount': len(self.waiters)})
+        await self.send_updates({'type': 'count', 'usercount': len(self.waiters)})
 
     @classmethod
-    def update_cache(cls, chat):
+    async def update_cache(cls, chat):
+        cls.count += 1
         cls.cache.append(chat)
         if len(cls.cache) > cls.cache_size:
             cls.cache = cls.cache[-cls.cache_size :]
 
     @classmethod
-    def send_updates(cls, chat):
+    async def send_updates(cls, chat):
         logging.info("sending message to %d waiters", len(cls.waiters))
         for waiter in cls.waiters:
             try:
-                waiter.write_message(chat)
+                await waiter.write_message(chat)
             except:
                 logging.error("Error sending message", exc_info=True)
 
-    def on_message(self, message):
+    async def on_message(self, message):
         logging.info("got message %r", message)
         parsed = tornado.escape.json_decode(message)
         #chat = {"id": str(uuid.uuid4()), "body": parsed["body"]}
@@ -77,17 +79,17 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
             'message': self.handle_message
         }
         type = parsed['type']
-        message_handlers[type](parsed)
+        await message_handlers[type](parsed)
 
-    def handle_settings(self, data):
+    async def handle_settings(self, data):
         print('Settings were updated')
 
 
-    def handle_message(self, data):
-        self.count += 1
-        chat = {'type': 'message', 'body': data['body'], 'count': self.count}
-        ChatSocketHandler.update_cache(chat)
-        ChatSocketHandler.send_updates(chat)
+    async def handle_message(self, data):
+        # just reuse data?
+        chat = {'type': 'message', 'body': data['body'], 'count': self.count, 'username': data['username']}
+        await ChatSocketHandler.update_cache(chat)
+        await ChatSocketHandler.send_updates(chat)
 
 def main():
     tornado.options.parse_command_line()
