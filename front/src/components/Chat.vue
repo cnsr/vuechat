@@ -2,14 +2,8 @@
 <div class="page-container">
     <md-app>
       <md-app-content>
-        <md-app-toolbar class="md-primary">
-          <md-button class="md-icon-button" @click="menuVisible = !menuVisible">
-            <md-icon>menu</md-icon>
-            </md-button>
-            <label id='usercount'>Users online: {{ getUsercount }}</label>
-          </md-app-toolbar>
         <md-content>
-          <div class="messages">
+          <div class="messages md-scrollbar">
               <template v-for="msg in getMessages">
                 <Message v-bind:msg="msg" v-bind:key="msg.count"></Message>
               </template>
@@ -21,7 +15,7 @@
         </md-field>
         <md-field>
           <label>Your message</label>
-          <md-textarea v-model="body"></md-textarea>
+          <md-textarea maxlen="2000" v-model="body"></md-textarea>
         </md-field>
         <md-button class="md-primary md-raised" :disabled="this.body == ''" @click="sendMessage()">Submit</md-button>
       </md-app-content>
@@ -64,12 +58,8 @@ export default {
 </script>
 
 <style scoped>
-    .md-app {
-        min-height: 75%;
-        /*height: 800px;*/
-    }
     .md-textarea {
-        height: 100px;;
+      height: 8vh;
     }
     .li {
       list-style-type: none;
@@ -78,4 +68,9 @@ export default {
       position: fixed;
       float: right;
     }
+    .messages {
+      overflow-y: scroll;
+      height: 55vh;
+    }
+    html,body{margin:0;padding:0;}
 </style>

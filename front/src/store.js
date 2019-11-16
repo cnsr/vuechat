@@ -31,7 +31,6 @@ export const store = new Vuex.Store({
     },
     SOCKET_ONMESSAGE(state, message) {
       console.log(message);
-      //console.log(message);
       switch (message.type) {
         case 'count':
           state.socket.usercount = message.usercount;
@@ -65,5 +64,3 @@ export const store = new Vuex.Store({
     }
   }
 });
-
-//export default store;

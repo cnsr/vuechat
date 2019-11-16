@@ -1,13 +1,11 @@
 import Vue from 'vue';
 import BootstrapVue from 'bootstrap-vue';
-import VueSocketIO from 'vue-socket.io';
 import 'bootstrap/dist/css/bootstrap.css';
 import 'bootstrap-vue/dist/bootstrap-vue.css';
 import Vuex from 'vuex';
 import VueMaterial from 'vue-material';
 import 'vue-material/dist/vue-material.css';
 import 'vue-material/dist/theme/black-green-light.css';
-// import socketio from 'socket.io-client';
 import VueNativeSock from 'vue-native-websocket';
 
 import App from './App.vue';
@@ -26,7 +24,7 @@ Vue.use(VueMaterial)
 
 Vue.config.productionTip = false;
 
-Vue.use(VueNativeSock, 'ws://localhost:8000/websocket', {
+Vue.use(VueNativeSock, 'ws://' + location.hostname + ':8000/websocket', {
   format: 'json',
   store: store,
   reconnection: true,
