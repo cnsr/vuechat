@@ -7,11 +7,15 @@ import tornado.web
 import tornado.websocket
 import os.path
 import uuid
+#import motor.motor_tornado
+import pymongo
 
 from tornado.options import define, options
 
 define("port", default=8000, help="run on the given port", type=int)
 
+client = pymongo.MongoClient('localhost', 27017)
+db = client['vuechat']
 
 class Application(tornado.web.Application):
     def __init__(self):
@@ -35,6 +39,15 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
     cache = []
     cache_size = 200
 
+    def __init__(self, application, request, **kwargs):
+        self.waiterid = str(uuid.uuid4())
+        self.cache = list(db.posts.find())
+        latest = list(db.posts.find().sort('count', pymongo.DESCENDING).limit(1))
+        self.count = latest[0]['count'] if latest else 0
+        for x in self.cache:
+            del x['_id']
+        super().__init__(application, request, **kwargs)
+
     def check_origin(self, origin):
         return True
 
@@ -53,14 +66,18 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
 
     @classmethod
     def update_cache(cls, chat):
-        cls.count += 1
         cls.cache.append(chat)
+        db.posts.insert_one(chat)
         if len(cls.cache) > cls.cache_size:
+            extra = db.posts.find({'thread': chat['thread']}).order_by({'count', pymongo.ASCENDING}).limit(1)
+            db.posts.delete_one({'count': extra['count']})
             cls.cache = cls.cache[-cls.cache_size :]
 
     @classmethod
     def send_updates(cls, chat):
         logging.info("sending message to %d waiters", len(cls.waiters))
+        if chat.get('_id'):
+            del chat['_id']
         for waiter in cls.waiters:
             try:
                 waiter.write_message(chat)
@@ -87,7 +104,8 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
 
     def handle_message(self, data):
         # just reuse data?
-        chat = {'type': 'message', 'body': data['body'], 'count': self.count, 'username': data['username']}
+        self.count += 1
+        chat = {'type': 'message', 'body': data['body'], 'count': self.count, 'username': data['username'], 'uid': self.waiterid}
         ChatSocketHandler.update_cache(chat)
         ChatSocketHandler.send_updates(chat)
 
