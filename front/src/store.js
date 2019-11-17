@@ -19,7 +19,7 @@ export const store = new Vuex.Store({
     },
     getMessages: state => {
       return state.messagesCache;
-    }
+    },
   },
   mutations: {
     SOCKET_ONOPEN(state, event) {
@@ -39,8 +39,10 @@ export const store = new Vuex.Store({
           state.messagesCache.push(message);
           break;
         case 'cached':
-          console.log(...message.cache);
           state.messagesCache = [...message.cache];
+          break;
+        case 'remove':
+          state.messagesCache = state.messagesCache.filter(m => m.count != message.count);
           break;
         default:
           console.log(message);

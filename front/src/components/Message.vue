@@ -4,6 +4,9 @@
             <span v-if="msg.username != ''">{{msg.username}} </span>
             <a v-bind:href="'#' + msg.count">#{{msg.count}}</a>
         </div>
+        <div v-if="msg.filelink != null" class='file'>
+          <img v-bind:src="'http://' + loc + ':8000/' + msg.filelink" />
+        </div>
         <pre>{{msg.body}}</pre>
         </div>
 </template>
@@ -13,6 +16,7 @@ export default {
   name: 'Message',
   data () {
     return {
+      loc: location.hostname,
     };
   },
   props: {

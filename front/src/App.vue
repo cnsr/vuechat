@@ -2,18 +2,28 @@
   <div id="app">
     <div id="nav">
       <md-app>
-        <md-app-toolbar class="md-primary">
+        <md-app-toolbar class="md-primary md-dense">
           <md-tabs class="md-primary" md-alignment="right" md-sync-route>
             <md-tab id="tab-home" md-label="Home" to='/'>
             </md-tab>
             <md-tab id="tab-settings" md-label="Settings" to='/settings'>
             </md-tab>
           </md-tabs>
+          <div class='md-toolbar-section-end'>
+            <md-button v-on:click="toggleUserlist" class='md-small'>{{ getUsercount }}</md-button>
+          </div>
         </md-app-toolbar>
       </md-app>
-      <label id='usercount'>Users online: {{ getUsercount }}</label>
       <router-view/>
     </div>
+    <md-card class='userlist' v-show="active">
+      <md-card-header>
+          <div class="md-title">List of users online</div>
+      </md-card-header>
+      <md-card-content>
+        <p>Nothing to see here</p>
+      </md-card-content>
+    </md-card>
   </div>
 </template>
 
@@ -27,12 +37,12 @@ export default {
   name: 'App',
   data () {
     return {
-      menuVisible: false
+      active: false,
     }
   },
   computed: {
-    ...mapState(['usercount']),
-    ...mapGetters(['getUsercount'])
+    ...mapState(['usercount', 'userlist']),
+    ...mapGetters(['getUsercount', 'getUserlist'])
   },
   components: {
     'Chat': Chat,
@@ -40,6 +50,16 @@ export default {
     'Message': Message,
   },
   methods: {
+    isMobile() {
+      if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        return true
+      } else {
+        return false
+      }
+    },
+    toggleUserlist() {
+      this.active = !this.active;
+    },
   }
 }
 </script>
@@ -56,6 +76,12 @@ export default {
   max-height: 100vh;
 }
 
+.userlist {
+  display: block;
+  position: relative;
+  top: -80%;
+}
+
 #nav a {
   font-weight: bold;
   color: #2c3e50;
@@ -68,5 +94,7 @@ export default {
 }
 .md-app {
   display: block;
+}
+.md-primary {
 }
 </style>
