@@ -13,10 +13,13 @@ import random
 import string
 import json
 from collections import Counter
+from datetime import datetime
 
 from tornado.options import define, options
 
 define("port", default=8000, help="run on the given port", type=int)
+
+admin_pw = '1234'
 
 client = pymongo.MongoClient('localhost', 27017)
 db = client['vuechat']
@@ -43,13 +46,13 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
     waiters = set()
     count = 0
     cache = []
-    cache_size = 3
+    cache_size = 10
     threads = ['General']
     max_threads = 10
 
     def __init__(self, application, request, **kwargs):
         self.waiterid = str(uuid.uuid4())
-        self.cache = list(db.posts.find())
+        self.cache = list(db.posts.find({'thread': 'General'}))
         print(len(self.cache))
         latest = list(db.posts.find().sort('count', pymongo.DESCENDING).limit(1))
         self.count = latest[0]['count'] if latest else 0
@@ -112,6 +115,7 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
             'settings': self.handle_settings,
             'message': self.handle_message,
             'thread': self.load_thread,
+            'admin': self.handle_admin,
         }
         type = parsed['type']
         message_handlers[type](parsed)
@@ -124,10 +128,15 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
         thread = data['thread']
         print(thread)
 
+    def handle_admin(self, data):
+            password = data['password']
+            print(password)
 
     def handle_message(self, data):
         # just reuse data?
         self.count += 1
+        now = datetime.now()
+        now = now.strftime("%m/%d/%Y, %H:%M:%S")
         chat = {
             'type': 'message',
             'body': data['body'],
@@ -137,6 +146,7 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
             'thread': data['thread'],
             'filelink': data['filelink'],
             'original_filename': data['filename'],
+            'time': now,
         }
         ChatSocketHandler.update_cache(chat)
         ChatSocketHandler.send_updates(chat)

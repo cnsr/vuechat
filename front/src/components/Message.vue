@@ -1,10 +1,11 @@
 <template>
     <div class="message" v-bind:id='msg.count'>
         <div class='message-header'>
+            <span>{{msg.time}}</span>
             <span v-if="msg.username != ''">{{msg.username}} </span>
             <a v-bind:href="'#' + msg.count">#{{msg.count}}</a>
         </div>
-        <div v-if="msg.filelink != null" class='file'>
+        <div v-if="msg.filelink != '' && msg.filelink !== undefined" class='file'>
           <img v-bind:src="'http://' + loc + ':8000/' + msg.filelink" />
         </div>
         <pre>{{msg.body}}</pre>

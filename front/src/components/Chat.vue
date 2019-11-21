@@ -1,5 +1,7 @@
 <template>
 <div class="page-container">
+  <div ref="container">
+  </div>
     <md-app>
       <md-app-content>
         <md-content>
@@ -25,10 +27,13 @@
           <md-textarea md-clearable="true" maxlen="2000" v-model="body" md-counter="2000" v-on:keyup.enter="sendMessage()"></md-textarea>
         </md-field>
         <div class="md-layout">
-          <md-field class="md-layout-item">
+          <div class="md-layout-item">
+            <input type="file" id="file" ref="file" v-on:change="handleFileUpload"/>
+          </div>
+          <!--md-field class="md-layout-item">
             <label>File</label>
             <md-file accept="audio/*|video/*|image/*" v-on:change="handleFileUpload" type="file" id="file" ref="file" v-model='filename' placeholder="Only images and videos below 10MiB accepted."/>
-          </md-field>
+          </md-field-->
           <md-field class="md-layout-item">
             <md-button class="md-primary md-raised" :disabled="this.body == ''" @click="sendMessage()">Submit</md-button>
           </md-field>
@@ -39,8 +44,10 @@
 </template>
 
 <script>
+import Vue from 'vue';
 import { mapState, mapGetters } from 'vuex';
 import Message from './Message.vue';
+import AdminPopup from './AdminPopup.vue';
 import * as axios from 'axios';
 
 export default {
@@ -63,8 +70,13 @@ export default {
   },
   methods: {
       sendMessage () {
-        if (this.body != '') {
-          if (!this.file) {
+        switch (true) {
+          case (this.body.startsWith('/')):
+            //console.log('slashfunc');
+            this.performSlash();
+            break;
+          case (this.body.trim() != '' && !this.file):
+            console.log('no file')
             this.$store.dispatch('sendMessage', {
               'type': 'message',
               'body': this.body,
@@ -75,17 +87,25 @@ export default {
             });
             this.body = '';
             this.file = null;
-          } else {
+            this.filelink = '';
+            this.filename = '';
+            break;
+          case (this.file != null):
+            console.log('file is uploaded');
             this.sendFile();
             this.file = null;
-          }
-        } else {
-          // TODO: warn of empty message
+            break;
+          default:
+            alert('Empty');
+            break;
         }
       },
       handleFileUpload () {
-        console.log(this.$refs.file.$refs.inputFile.files[0]);
-        this.file = this.$refs.file.$refs.inputFile.files[0];
+        console.log(this.$refs.file.files[0]);
+        //console.log(this.$refs.file.$refs.inputFile.files[0]);
+        //this.file = this.$refs.file.$refs.inputFile.files[0];
+        this.file = this.$refs.file.files[0];
+        if (this.body == '') this.body = ' ';
         // TODO: check filesize, warn if too large and clear
       },
       sendFile () {
@@ -105,16 +125,36 @@ export default {
           .then(function(response) {
             console.log(response.data);
             console.log(this);
+            if (this.body == '') this.body = ' ';
             this.filelink = response.data.link;
             this.uploadPercentage = 0;
+            this.file = null;
           }.bind(this))
           .catch(function() {
             console.log('err');
           })
+      },
+      performSlash () {
+        console.log('slashery');
+        console.log(this.body);
+        switch (this.body.trim()) {
+          case '/admin':
+            var adminpop = Vue.extend(AdminPopup);
+            var instance = new adminpop();
+            instance.$mount();
+            console.log(this.$refs);
+            this.$refs.container.appendChild(instance.$el);
+            break;
+          case '/huj':
+            break;
+          default:
+            break;
+        }
       }
   },
   components: {
     'Message': Message,
+    'AdminPopup': AdminPopup,
   },
 };
 </script>
