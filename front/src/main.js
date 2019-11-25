@@ -17,10 +17,18 @@ import { store } from './store';
 import Chat from './components/Chat.vue';
 import Settings from './components/Settings.vue';
 import Message from './components/Message.vue';
+import AdminPopup from './components/AdminPopup.vue';
+
+import VueSnackbar from 'vue-snack' 
+import 'vue-snack/dist/vue-snack.min.css'
+import VueChatScroll from 'vue-chat-scroll';
+
 
 Vue.use(BootstrapVue);
 Vue.use(Vuex);
 Vue.use(VueMaterial)
+Vue.use(VueSnackbar, { position: 'bottom-right', time: 3000 })
+Vue.use(VueChatScroll);
 
 Vue.config.productionTip = false;
 
@@ -44,6 +52,7 @@ new Vue({
     'Chat': Chat,
     'Settings': Settings,
     'Message': Message,
+    'AdminPopup': AdminPopup,
   },
   render: h => h(App),
 }).$mount('#app');

@@ -14,6 +14,7 @@ import string
 import json
 from collections import Counter
 from datetime import datetime
+import config
 
 from tornado.options import define, options
 
@@ -48,6 +49,7 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
     cache = []
     cache_size = 10
     threads = ['General']
+    ip = None
     max_threads = 10
 
     def __init__(self, application, request, **kwargs):
@@ -91,6 +93,7 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
             db.posts.delete_many({'thread': oldest['thread']})
         cached = [msg for msg in cls.cache if msg['thread'] == chat['thread']]
         # cached is only counts new posts for some reason
+        print('cache oversized', len(cached) > cls.cache_size)
         if len(cached) > cls.cache_size:
             extra = db.posts.find_one_and_delete({'thread': chat['thread']}, sort=[('count', 1)])
             cls.send_updates({'type': 'remove', 'count': extra['count']})
@@ -116,6 +119,8 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
             'message': self.handle_message,
             'thread': self.load_thread,
             'admin': self.handle_admin,
+            'remove': self.handle_remove,
+            'ban': self.handle_ban,
         }
         type = parsed['type']
         message_handlers[type](parsed)
@@ -129,8 +134,10 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
         print(thread)
 
     def handle_admin(self, data):
-            password = data['password']
-            print(password)
+        self.write_message({
+            'type': 'setadmin',
+            'admin': data['password'] == config.ADMIN_PASSWORD
+        })
 
     def handle_message(self, data):
         # just reuse data?
@@ -150,6 +157,16 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
         }
         ChatSocketHandler.update_cache(chat)
         ChatSocketHandler.send_updates(chat)
+    
+    def handle_remove(self, data):
+        if data['admin']:
+            extra = db.posts.find_one_and_delete({'count': data['count']})
+            self.send_updates({'type': 'remove', 'count': extra['count']})
+        else:
+            self.write_message({'type': 'error', 'text': 'You are not admin'})
+
+    def handle_ban(self, ban):
+        pass
 
 
 class UploadHandler(tornado.web.RequestHandler):

@@ -1,11 +1,13 @@
 <template>
 <div class="page-container">
-  <div ref="container">
+  <div ref="container" class='popup-container'>
+  </div>
+  <div>
   </div>
     <md-app>
       <md-app-content>
         <md-content>
-          <div class="messages md-scrollbar">
+          <div class="messages md-scrollbar" v-chat-scroll="{always: false, smooth: true}">
               <template v-for="msg in getMessages">
                 <Message v-bind:msg="msg" v-bind:key="msg.count"></Message>
               </template>
@@ -28,15 +30,15 @@
         </md-field>
         <div class="md-layout">
           <div class="md-layout-item">
-            <input type="file" id="file" ref="file" v-on:change="handleFileUpload"/>
+            <input accept="audio/*|video/*|image/*" type="file" id="file" ref="file" v-on:change="handleFileUpload"/>
           </div>
           <!--md-field class="md-layout-item">
             <label>File</label>
             <md-file accept="audio/*|video/*|image/*" v-on:change="handleFileUpload" type="file" id="file" ref="file" v-model='filename' placeholder="Only images and videos below 10MiB accepted."/>
           </md-field-->
-          <md-field class="md-layout-item">
-            <md-button class="md-primary md-raised" :disabled="this.body == ''" @click="sendMessage()">Submit</md-button>
-          </md-field>
+          <div class="md-layout-item">
+            <md-button class="md-primary md-raised" :disabled="this.body == '' || this.disableButton" @click="sendMessage()">Submit</md-button>
+          </div>
         </div>
       </md-app-content>
     </md-app>
@@ -62,6 +64,7 @@ export default {
       filelink: '',
       uploadPercentage: 0,
       filename: '',
+      disableButton: false,
     };
   },
   computed: {
@@ -70,16 +73,16 @@ export default {
   },
   methods: {
       sendMessage () {
+        if (this.disableButton) {return;};
         switch (true) {
           case (this.body.startsWith('/')):
-            //console.log('slashfunc');
             this.performSlash();
             break;
           case (this.body.trim() != '' && !this.file):
             console.log('no file')
             this.$store.dispatch('sendMessage', {
               'type': 'message',
-              'body': this.body,
+              'body': this.body.trim(),
               'username': this.username,
               'thread': this.thread,
               'filelink': this.filelink,
@@ -89,11 +92,17 @@ export default {
             this.file = null;
             this.filelink = '';
             this.filename = '';
+            this.disableButton = true;
+            setTimeout(() => this.disableButton=false, 3000);
             break;
           case (this.file != null):
-            console.log('file is uploaded');
             this.sendFile();
             this.file = null;
+            break;
+          case (this.body == '' && this.file == null):
+            Vue.prototype.$snack.danger({
+              text: 'Empty post!',
+            });
             break;
           default:
             alert('Empty');
@@ -101,7 +110,7 @@ export default {
         }
       },
       handleFileUpload () {
-        console.log(this.$refs.file.files[0]);
+        //console.log(this.$refs.file.files[0]);
         //console.log(this.$refs.file.$refs.inputFile.files[0]);
         //this.file = this.$refs.file.$refs.inputFile.files[0];
         this.file = this.$refs.file.files[0];
@@ -142,7 +151,7 @@ export default {
             var adminpop = Vue.extend(AdminPopup);
             var instance = new adminpop();
             instance.$mount();
-            console.log(this.$refs);
+            //console.log(this.$refs);
             this.$refs.container.appendChild(instance.$el);
             break;
           case '/huj':
@@ -178,6 +187,16 @@ export default {
     .messages {
       overflow-y: scroll;
       height: 55vh;
+    }
+    .popup-container {
+      position: fixed;
+      z-index: 10000000;
+      width: auto;
+      left: 50%;
+      top: 50%;
+    }
+    .md-layout-item {
+      max-height: 36px !important;
     }
     html,body{margin:0;padding:0;}
 </style>

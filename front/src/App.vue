@@ -31,6 +31,7 @@
 import Chat from './components/Chat.vue';
 import Settings from './components/Settings.vue';
 import Message from './components/Message.vue';
+import Snack from './components/Snack.vue';
 import { mapState, mapGetters } from 'vuex';
 
 export default {
@@ -48,6 +49,7 @@ export default {
     'Chat': Chat,
     'Settings': Settings,
     'Message': Message,
+    'Snack': Snack,
   },
   methods: {
     isMobile() {

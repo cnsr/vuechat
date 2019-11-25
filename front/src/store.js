@@ -5,6 +5,8 @@ Vue.use(Vuex);
 
 export const store = new Vuex.Store({
   state: {
+    uid: '',
+    admin: false,
     socket: {
       isConnected: false,
       message: '',
@@ -12,6 +14,7 @@ export const store = new Vuex.Store({
       usercount: 0,
     },
     messagesCache: [],
+    error: '',
   },
   getters: {
     getUsercount: state => {
@@ -20,6 +23,12 @@ export const store = new Vuex.Store({
     getMessages: state => {
       return state.messagesCache;
     },
+    getAdmin: state => {
+      return state.admin;
+    },
+    getUID: state => {
+      return state.uid;
+    }
   },
   mutations: {
     SOCKET_ONOPEN(state, event) {
@@ -32,6 +41,17 @@ export const store = new Vuex.Store({
     SOCKET_ONMESSAGE(state, message) {
       console.log(message);
       switch (message.type) {
+        case 'uid':
+          state.uid = message.uid;
+        case 'setadmin':
+          state.admin = message.admin;
+          if (message.admin)
+            document.getElementById('adminfloater').remove();
+          else {
+            Vue.prototype.$snack.danger({
+              text: 'Wrong password',
+            });
+          }
         case 'count':
           state.socket.usercount = message.usercount;
           break;
@@ -43,6 +63,11 @@ export const store = new Vuex.Store({
           break;
         case 'remove':
           state.messagesCache = state.messagesCache.filter(m => m.count != message.count);
+          break;
+        case 'error':
+          Vue.prototype.$snack.danger({
+            text: message.text,
+          });
           break;
         default:
           console.log(message);
