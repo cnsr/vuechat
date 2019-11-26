@@ -22,13 +22,15 @@ import AdminPopup from './components/AdminPopup.vue';
 import VueSnackbar from 'vue-snack' 
 import 'vue-snack/dist/vue-snack.min.css'
 import VueChatScroll from 'vue-chat-scroll';
-
+//import Buefy from 'buefy';
+//import 'buefy/dist/buefy.css'
 
 Vue.use(BootstrapVue);
 Vue.use(Vuex);
 Vue.use(VueMaterial)
-Vue.use(VueSnackbar, { position: 'bottom-right', time: 3000 })
+Vue.use(VueSnackbar, { position: 'top-right', time: 3000 })
 Vue.use(VueChatScroll);
+//Vue.use(Buefy);
 
 Vue.config.productionTip = false;
 

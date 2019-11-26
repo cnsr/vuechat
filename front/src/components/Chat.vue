@@ -6,6 +6,13 @@
   </div>
     <md-app>
       <md-app-content>
+        <b-progress v-if="this.uploadPercentage > 0"
+            :type="'is-darkgrey'"
+            :size="'is-small'"
+            :value="this.uploadPercentage ? undefined : 0"
+            :show-value="false"
+            :format="'raw'"
+            :keep-trailing-zeroes="false"></b-progress>
         <md-content>
           <div class="messages md-scrollbar" v-chat-scroll="{always: false, smooth: true}">
               <template v-for="msg in getMessages">
@@ -13,7 +20,7 @@
               </template>
           </div>
         </md-content>
-        <progress max="100" :value.prop="uploadPercentage"></progress>
+        <!--progress max="100" :value.prop="uploadPercentage"></progress-->
         <div class="md-layout">
           <md-field class="md-layout-item">
             <label>Username</label>
@@ -197,6 +204,26 @@ export default {
     }
     .md-layout-item {
       max-height: 36px !important;
+    }
+    .progress {
+      position: relative;
+      top:-15px;
+      height: 3px;
+      margin-top: 0px;
+    }
+    @media only screen and (max-width: 768px) {
+      .md-button {
+        margin: 0px;
+      }
+      #file {
+
+      }
+      .md-textarea {
+        min-height: 50px !important;
+      }
+      .progress {
+        margin-top: 0px;
+      }
     }
     html,body{margin:0;padding:0;}
 </style>

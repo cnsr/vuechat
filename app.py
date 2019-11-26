@@ -16,14 +16,20 @@ from collections import Counter
 from datetime import datetime
 import config
 
+from utils import *
+
+import geoip2.database as gdb
+gdbr = gdb.Reader('GeoLite2-City.mmdb')
+
 from tornado.options import define, options
 
 define("port", default=8000, help="run on the given port", type=int)
 
-admin_pw = '1234'
-
 client = pymongo.MongoClient('localhost', 27017)
 db = client['vuechat']
+
+with open('front/regioncodes.json') as f:
+    regioncodes = json.loads(f.read())
 
 class Application(tornado.web.Application):
     def __init__(self):
@@ -32,6 +38,7 @@ class Application(tornado.web.Application):
             (r"/websocket", ChatSocketHandler),
             (r"/upload", UploadHandler),
             (r'/static/(.*)/?', tornado.web.StaticFileHandler, {'path': 'static'}),
+            (r'/flags/(.*)/?', tornado.web.StaticFileHandler, {'path': 'flags'}),
             (r'/uploads/(.*)/?', tornado.web.StaticFileHandler, {'path': 'uploads'}),
         ]
         settings = dict(
@@ -88,6 +95,7 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
         if chat['thread'] not in cls.threads:
             # delete oldest thread
             oldest = db.posts.find_one_and_delete({'thread': {"$ne": 'General'}}, sort=[('count', 1)])
+            removeing(oldest)
             cls.threads.remove(oldest['thread'])
             cls.send_updates({'type': 'remove_thread', 'count': oldest['thread']})
             db.posts.delete_many({'thread': oldest['thread']})
@@ -96,6 +104,7 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
         print('cache oversized', len(cached) > cls.cache_size)
         if len(cached) > cls.cache_size:
             extra = db.posts.find_one_and_delete({'thread': chat['thread']}, sort=[('count', 1)])
+            removeing(extra)
             cls.send_updates({'type': 'remove', 'count': extra['count']})
             cls.cache[:] = [msg for msg in cls.cache if msg['count'] != extra['count']]
 
@@ -140,10 +149,39 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
         })
 
     def handle_message(self, data):
-        # just reuse data?
+        country = {}
         self.count += 1
         now = datetime.now()
         now = now.strftime("%m/%d/%Y, %H:%M:%S")
+        # move ip to init ????
+        ip = get_ip(self.request)
+        if ip == '127.0.0.1':
+            ip = '172.217.20.206'
+        gdbr_data = gdbr.city(ip)
+        extraflags = ['Bavaria', 'Scotland', 'Wales']
+        # exceptions for IPs that are incorrectly detected, has to be changed manually smh
+        country['country'] = gdbr_data.country.iso_code
+        ip_exceptions = {"80.128.":'Bavaria',
+                        "95.91.205": 'Bavaria'}
+        is_in_exceptions = [v for k,v in ip_exceptions.items() if ip.startswith(k)]
+        if gdbr_data.subdivisions.most_specific.name in extraflags:
+            country['country'] = gdbr_data.subdivisions.most_specific.name
+            country['countryname'] = country['country']
+        elif is_in_exceptions:
+            country['country'] = country['countryname'] = is_in_exceptions[0]
+        else:
+            try:
+                country['countryname'] = regioncodes[country['country']]
+            except KeyError:
+                country['countryname'] = 'Proxy'
+                country['country'] = 'PROXY'
+        print(country)
+        # add city
+        country = {'countryname': country['countryname'],
+                    'country': country['country'],
+                    'long': gdbr_data.location.longitude,
+                    'lat': gdbr_data.location.latitude,
+                    }
         chat = {
             'type': 'message',
             'body': data['body'],
@@ -154,7 +192,9 @@ class ChatSocketHandler(tornado.websocket.WebSocketHandler):
             'filelink': data['filelink'],
             'original_filename': data['filename'],
             'time': now,
+            'country': country,
         }
+        print('CHAT: ', chat)
         ChatSocketHandler.update_cache(chat)
         ChatSocketHandler.send_updates(chat)
     

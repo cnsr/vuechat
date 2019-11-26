@@ -80,15 +80,16 @@ export default {
 
 .userlist {
   display: block;
-  position: relative;
-  top: -80%;
+  position: fixed;
+  right: 0;
+  top: 5%;
 }
 
 #nav a {
   font-weight: bold;
   color: #2c3e50;
   padding-right: 5px;
-  padding-left: 50px;
+  padding-left: 5px;
 }
 
 #nav a.router-link-exact-active {
@@ -97,6 +98,8 @@ export default {
 .md-app {
   display: block;
 }
-.md-primary {
+.snackbar {
+  display: block;
+  position: relative;
 }
 </style>

@@ -11,6 +11,7 @@
     "axios": "^0.19.0",
     "bootstrap": "^4.3.1",
     "bootstrap-vue": "^2.1.0",
+    "buefy": "^0.8.8",
     "core-js": "^3.3.2",
     "socket.io": "^2.3.0",
     "socket.io-client": "^2.3.0",

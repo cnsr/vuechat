@@ -7,8 +7,9 @@
               <b-button squared size='sm' variant="dark" class='adminbtn' @click="sendBan(msg.uid)">ban</b-button>
             </span>
             <span>{{msg.time}}</span>
-            <span v-if="msg.username != ''">{{msg.username}} </span>
-            <a v-bind:href="'#' + msg.count">#{{msg.count}}</a>
+            <span v-if="msg.username != ''"> {{msg.username}} </span>
+            <span><img class='flag' v-bind:src="'http://' + loc + ':8000/flags/' + msg.country.country + '.png'" /></span>
+            <a v-bind:href="'#' + msg.count" @click="addText(msg.count)">#{{msg.count}}</a>
         </div>
         <div v-if="msg.filelink != '' && msg.filelink !== undefined" class='file'>
           <img v-bind:src="'http://' + loc + ':8000/' + msg.filelink" />
@@ -19,6 +20,8 @@
 </template>
 
 <script>
+import Vue from 'vue';
+
 import { mapState, mapGetters } from 'vuex';
 export default {
   name: 'Message',
@@ -50,7 +53,11 @@ export default {
         'count': id,
         'uid': uid,
       });
-    }
+    },
+    addText(cnt) {
+      console.log(this);
+      console.log(Vue.prototype);
+    },
   }
 };
 </script>
@@ -76,7 +83,9 @@ export default {
       top: 10px;
       right: 10px;
       padding: 3px;
-      border: 1px solid black;
+      color: black;
+      border: 1px solid black !important;
+      border-radius: 0% !important;
       z-index: 1000;
     }
     .file {
@@ -96,5 +105,14 @@ export default {
       overflow-wrap: break-word;
       padding-left: 5px;
       white-space: normal;
+    }
+    .flag {
+      height: 24px;
+    }
+    @media only screen and (max-width: 768px) {
+      .message-text {
+        margin-top: 15px;
+        margin-bottom: 0px;
+      }
     }
 </style>
